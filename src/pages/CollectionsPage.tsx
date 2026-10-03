@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import ArtworkImage from '../components/ArtworkImage'
 import StatusPanel from '../components/StatusPanel'
-import { useFeatured } from '../hooks/useFeatured'
+import { useBrowseArtworks } from '../hooks/useBrowseArtworks'
 import { rememberScroll, useScrollMemory } from '../hooks/useScrollMemory'
-import { searchArtworks, sortArtworks, type Artwork, type SortKey, type SortOrder } from '../lib/artworks'
+import { ARTWORK_PAGE_SIZE, searchArtworks, sortArtworks, type Artwork, type SortKey, type SortOrder } from '../lib/artworks'
 
-const pageSize = 24
 const sortLabels: Record<SortKey, string> = {
   title: 'Artwork name', artist: 'Artist', date: 'Creation date', type: 'Art type',
 }
@@ -27,12 +26,15 @@ export default function CollectionsPage() {
   const query = params.get('q') ?? ''
   const sort = (['title', 'artist', 'date', 'type'].includes(params.get('sort') ?? '') ? params.get('sort') : 'title') as SortKey
   const order: SortOrder = params.get('order') === 'desc' ? 'desc' : 'asc'
-  const pages = Math.min(10, Math.max(1, Number.parseInt(params.get('pages') ?? '1', 10) || 1))
+  const requestedPages = Number(params.get('pages'))
+  const pages = Number.isSafeInteger(requestedPages) && requestedPages > 0 ? requestedPages : 1
+  const count = ARTWORK_PAGE_SIZE * pages
+  const isSearching = Boolean(query.trim())
   const [composing, setComposing] = useState(false)
   const searchInput = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebouncedQuery(query, composing)
-  const featured = useFeatured()
-  const [searchResult, setSearchResult] = useState<{ items: Artwork[]; total: number; key: string } | null>(null)
+  const browse = useBrowseArtworks(isSearching ? ARTWORK_PAGE_SIZE : count)
+  const [searchResult, setSearchResult] = useState<{ items: Artwork[]; total: number; query: string; count: number } | null>(null)
   const [searchErrorKey, setSearchErrorKey] = useState<string | null>(null)
   const [retryIndex, setRetryIndex] = useState(0)
 
@@ -40,28 +42,31 @@ export default function CollectionsPage() {
     if (!debouncedQuery.trim()) return
     const controller = new AbortController()
     const key = `${debouncedQuery.trim()}|${pages}`
-    searchArtworks(debouncedQuery, pageSize * pages, controller.signal).then(
+    searchArtworks(debouncedQuery, count, controller.signal).then(
       (result) => {
         if (controller.signal.aborted) return
-        setSearchResult({ ...result, key })
+        setSearchResult({ ...result, query: debouncedQuery.trim(), count })
         setSearchErrorKey(null)
       },
       () => { if (!controller.signal.aborted) setSearchErrorKey(key) },
     )
     return () => controller.abort()
-  }, [debouncedQuery, pages, retryIndex])
+  }, [debouncedQuery, count, pages, retryIndex])
 
   const resultKey = `${debouncedQuery.trim()}|${pages}`
-  const isSearching = Boolean(query.trim())
   const searchError = query === debouncedQuery && searchErrorKey === resultKey
-  const isPending = isSearching && !searchError && (query !== debouncedQuery || searchResult?.key !== resultKey)
-  const isReady = isSearching ? !isPending && !searchError : featured.status === 'ready'
+  const sameSearch = query === debouncedQuery && searchResult?.query === debouncedQuery.trim()
+  const searchLoadingMore = isSearching && sameSearch && Boolean(searchResult?.items.length) && (searchResult?.count ?? 0) < count && !searchError
+  const searchLoadMoreError = searchError && sameSearch && Boolean(searchResult?.items.length)
+  const isPending = isSearching && !searchError && !searchLoadingMore && (!sameSearch || (searchResult?.count ?? 0) < count)
+  const isReady = isSearching ? !isPending && !searchError : browse.status === 'ready'
   const items = useMemo(
-    () => sortArtworks(isSearching ? searchResult?.items ?? [] : featured.items.slice(0, pageSize * pages), sort, order),
-    [isSearching, searchResult, featured.items, pages, sort, order],
+    () => sortArtworks(isSearching ? sameSearch ? searchResult?.items ?? [] : [] : browse.items, sort, order),
+    [isSearching, sameSearch, searchResult, browse.items, sort, order],
   )
-  const total = isSearching ? searchResult?.total ?? 0 : featured.items.length
-  const hasMore = items.length < total && pages < 10
+  const hasMore = isSearching ? items.length < (searchResult?.total ?? 0) : browse.hasMore
+  const loadingMore = isSearching ? searchLoadingMore : browse.loadingMore
+  const loadMoreError = isSearching ? searchLoadMoreError : browse.loadMoreError
   const sourcePath = `${location.pathname}${location.search}`
   useScrollMemory(isReady)
 
@@ -108,12 +113,12 @@ export default function CollectionsPage() {
       </button>
     </div>
 
-    {(!isSearching && featured.status === 'loading') || (isSearching && isPending)
+    {(!isSearching && browse.status === 'loading') || (isSearching && isPending)
       ? <StatusPanel title="Gathering artworks" message="Searching the collection…" loading />
-      : (!isSearching && featured.status === 'error') || (isSearching && searchError)
-        ? <StatusPanel title="The collection could not be loaded" message="Check your connection and try again." action="Try again" onAction={isSearching ? () => { setSearchErrorKey(null); setRetryIndex((value) => value + 1) } : featured.retry} />
+      : (!isSearching && browse.status === 'error') || (isSearching && searchError && !searchLoadMoreError)
+        ? <StatusPanel title="The collection could not be loaded" message="Check your connection and try again." action="Try again" onAction={isSearching ? () => { setSearchErrorKey(null); setRetryIndex((value) => value + 1) } : browse.retry} />
         : items.length === 0
-          ? <StatusPanel title={isSearching ? 'No artworks found' : 'No artworks available'} message={isSearching ? 'Try another artwork name or artist.' : 'Please try again shortly.'} action={isSearching ? 'Clear search' : 'Try again'} onAction={isSearching ? () => updateParam('q', '', true) : featured.retry} />
+          ? <StatusPanel title={isSearching ? 'No artworks found' : 'No artworks available'} message={isSearching ? 'Try another artwork name or artist.' : 'Please try again shortly.'} action={isSearching ? 'Clear search' : 'Try again'} onAction={isSearching ? () => updateParam('q', '', true) : browse.retry} />
           : <>
             <div className="artwork-list">
               {items.map((artwork, index) => <Link className="list-item" key={artwork.id} to={detailPath(artwork.id)} onClick={() => rememberScroll(sourcePath)}>
@@ -128,7 +133,7 @@ export default function CollectionsPage() {
                 </span>
               </Link>)}
             </div>
-            {hasMore && <div className="load-more"><button type="button" className="button button-outline" onClick={() => updateParam('pages', String(pages + 1))}>Load more artworks <span aria-hidden="true">↓</span></button></div>}
+            {hasMore && <div className="load-more"><button type="button" className="button button-outline" disabled={loadingMore} onClick={loadMoreError ? isSearching ? () => { setSearchErrorKey(null); setRetryIndex((value) => value + 1) } : browse.retry : () => updateParam('pages', String(pages + 1))}>{loadMoreError ? 'Try loading again' : loadingMore ? 'Loading artworks…' : 'Load more artworks'} <span aria-hidden="true">↓</span></button></div>}
           </>}
   </div>
 }

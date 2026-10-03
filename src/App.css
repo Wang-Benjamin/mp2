@@ -50,6 +50,8 @@
 .button { min-height: 47px; padding: 0 22px; border: 1px solid var(--green); font-weight: 650; font-size: 14px; transition: background .2s, color .2s, transform .2s; }
 .button-outline { color: var(--green); background: transparent; }
 .button-outline:hover { color: white; background: var(--green); transform: translateY(-2px); }
+.button:disabled { opacity: .6; cursor: progress; }
+.button:disabled:hover { color: var(--green); background: transparent; transform: none; }
 .button span { margin-left: 8px; }
 .status-panel { min-height: 330px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); text-align: center; color: var(--muted); }
 .status-panel h2 { margin: 16px 0 5px; font-family: var(--display); font-size: 31px; color: var(--ink); font-weight: 450; }

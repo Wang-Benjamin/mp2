@@ -2,7 +2,7 @@
 
 This assignment was developed with OpenAI Codex assistance. The course README requires submitting the AI chatlogs and answering the LLM-use survey questions with the grading form.
 
-- [Art Institute of Chicago API documentation](https://api.artic.edu/docs/) — artwork fields, search endpoints, public-domain images, and IIIF URL conventions.
+- [Art Institute of Chicago API documentation](https://api.artic.edu/docs/) — artwork fields, search and listing pagination, public-domain images, and IIIF URL conventions.
 - [React documentation](https://react.dev/) — React component and hook reference.
 - [React Router documentation](https://reactrouter.com/) — client-side routing and navigation.
 - [Axios documentation](https://axios-http.com/docs/intro) — API requests and cancellation.

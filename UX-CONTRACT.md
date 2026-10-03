@@ -23,8 +23,8 @@
 ## Navigation and data
 
 - `/` redirects to `/collections`; `/gallery` and `/artworks/:id` are specific routes under the Vite base path.
-- Default Collections shows the first 24 highlighted artworks, with explicit Load more. Search covers the full catalog in increments of 24, capped at 10 loaded increments per visit. Sorting applies to all currently loaded results and places missing values last.
-- Gallery shows up to 72 highlighted public-domain artworks. Type, artist, period, and department filters are independent and combine with AND logic.
+- Collections starts with 20 public-domain image-bearing artworks and loads 20 more per click. Search matches titles and artists across the catalog, also loading 20 per click. Sorting applies to all currently loaded results and places missing values last.
+- Gallery starts with 20 artworks and loads 20 more per click. Highlighted artworks appear first, followed by the wider public-domain image-bearing catalog. Type, artist, period, and department filters combine with AND logic; filtered pages fetch matching artworks so each click adds 20 visible works when available.
 - A detail URL carries its source view and controls. Previous and Next use that source's displayed order. The Back link restores the source URL, and scroll position is remembered for the session. A direct detail URL without source context has disabled navigation arrows.
 - Missing artwork metadata is described plainly. Only public-domain artwork images are displayed; other artworks remain searchable and get an image placeholder.
 

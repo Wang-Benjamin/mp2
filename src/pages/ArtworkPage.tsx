@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import ArtworkImage from '../components/ArtworkImage'
 import StatusPanel from '../components/StatusPanel'
-import { arrangeGallery, filterGallery, getArtwork, getFeaturedArtworks, plainText, searchArtworks, sortArtworks, type Artwork, type GalleryFilters, type Period, type SortKey, type SortOrder } from '../lib/artworks'
+import { ARTWORK_PAGE_SIZE, arrangeGallery, getArtwork, getBrowseArtworks, getFilteredGalleryArtworks, plainText, searchArtworks, sortArtworks, type Artwork, type GalleryFilters, type Period, type SortKey, type SortOrder } from '../lib/artworks'
 
 export default function ArtworkPage() {
   const { id } = useParams()
@@ -37,21 +37,24 @@ export default function ArtworkPage() {
     const controller = new AbortController()
     const contextParams = new URLSearchParams(location.search)
     const load = async () => {
+      const requestedPages = Number(contextParams.get('pages'))
+      const pages = Number.isSafeInteger(requestedPages) && requestedPages > 0 ? requestedPages : 1
+      const count = ARTWORK_PAGE_SIZE * pages
       if (from === 'gallery') {
-        const featured = await getFeaturedArtworks()
         const filters: GalleryFilters = {
           type: contextParams.get('type') ?? '',
           artist: contextParams.get('artist') ?? '',
           period: (contextParams.get('period') ?? '') as Period,
           department: contextParams.get('department') ?? '',
         }
-        return arrangeGallery(filterGallery(featured, filters))
+        const hasFilters = Boolean(filters.type || filters.artist || filters.period || filters.department)
+        const gallery = hasFilters ? await getFilteredGalleryArtworks(filters, count) : await getBrowseArtworks(count)
+        return arrangeGallery(gallery.items)
       }
       const query = contextParams.get('q') ?? ''
-      const pages = Math.min(10, Math.max(1, Number.parseInt(contextParams.get('pages') ?? '1', 10) || 1))
       const result = query.trim()
-        ? (await searchArtworks(query, 24 * pages, controller.signal)).items
-        : (await getFeaturedArtworks()).slice(0, 24 * pages)
+        ? (await searchArtworks(query, count, controller.signal)).items
+        : (await getBrowseArtworks(count)).items
       const sort = (['title', 'artist', 'date', 'type'].includes(contextParams.get('sort') ?? '') ? contextParams.get('sort') : 'title') as SortKey
       const order: SortOrder = contextParams.get('order') === 'desc' ? 'desc' : 'asc'
       return sortArtworks(result, sort, order)
