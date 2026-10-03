@@ -46,7 +46,7 @@ Newsreader carries titles and gallery captions. Source Sans 3 carries controls, 
 
 ## Layout
 
-The page has a 1660px maximum width and responsive side insets. Collection rows keep the image left and text right; their metadata wraps on narrow screens. The gallery uses a row-first CSS grid so navigation follows the visible left-to-right order while every image keeps its natural aspect ratio. Detail pages use two columns on desktop and stack the image over information below 760px. Width and height image attributes reserve space before media loads.
+The page has a 1660px maximum width and responsive side insets. Collection rows keep the image left and text right; their metadata wraps on narrow screens. The gallery packs artworks into justified rows using thumbnail aspect ratios, so the images remain uncropped, fill each row, and follow a visible left-to-right navigation order. Detail pages use two columns on desktop and stack the image over information below 760px. Width and height image attributes reserve space before media loads.
 
 ## Elevation & Depth
 

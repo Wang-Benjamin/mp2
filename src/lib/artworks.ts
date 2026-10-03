@@ -113,26 +113,17 @@ export function getFeaturedArtworks(): Promise<Artwork[]> {
 
 export async function searchArtworks(query: string, count: number, signal?: AbortSignal): Promise<ArtworkPage> {
   const term = query.trim()
+  const pattern = `*${term.replace(/[\\*?]/g, '\\$&')}*`
   const artworkQuery = {
-    multi_match: {
-      query: term,
-      fields: ['title^4', 'artist_title^3', 'artist_display'],
-      type: 'best_fields',
+    bool: {
+      should: [
+        { wildcard: { 'title.keyword': { value: pattern, case_insensitive: true } } },
+        { wildcard: { 'artist_title.keyword': { value: pattern, case_insensitive: true } } },
+      ],
+      minimum_should_match: 1,
     },
   }
-  try {
-    return await search(artworkQuery, count, signal)
-  } catch (error) {
-    if (axios.isCancel(error) || signal?.aborted) throw error
-    const { data } = await api.get<ApiResponse<ApiArtwork[]>>('/artworks/search', {
-      params: { q: term, fields: listFields, limit: count },
-      signal,
-    })
-    return {
-      items: normalize(data.data ?? [], data.config?.iiif_url),
-      total: data.pagination?.total ?? data.data?.length ?? 0,
-    }
-  }
+  return search(artworkQuery, count, signal)
 }
 
 export async function getArtwork(id: number, signal?: AbortSignal): Promise<Artwork> {

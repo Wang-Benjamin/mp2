@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import ArtworkImage from '../components/ArtworkImage'
+import { useLocation, useSearchParams } from 'react-router-dom'
+import GalleryWall from '../components/GalleryWall'
 import StatusPanel from '../components/StatusPanel'
 import { useFeatured } from '../hooks/useFeatured'
-import { rememberScroll, useScrollMemory } from '../hooks/useScrollMemory'
+import { useScrollMemory } from '../hooks/useScrollMemory'
 import { arrangeGallery, filterGallery, type Artwork, type GalleryFilters, type Period } from '../lib/artworks'
 
 const periods: { value: Period; label: string }[] = [
@@ -76,11 +76,6 @@ export default function GalleryPage() {
         ? <StatusPanel title="The gallery could not be loaded" message="Check your connection and try again." action="Try again" onAction={featured.retry} />
         : filtered.length === 0
           ? <StatusPanel title="No artworks match these filters" message="Try a different combination." action="Clear filters" onAction={() => setParams({}, { replace: true })} />
-          : <div className="gallery-grid">
-            {filtered.map((artwork, index) => <Link className="gallery-card" key={artwork.id} to={detailPath(artwork.id)} onClick={() => rememberScroll(sourcePath)}>
-              <span className="gallery-image-wrap"><ArtworkImage key={`${artwork.id}-${artwork.image_id}`} artwork={artwork} size={400} eager={index < 8} /></span>
-              <span className="gallery-caption"><strong>{artwork.title || 'Untitled'}</strong><span>{artwork.artist_title || 'Artist unknown'} <span aria-hidden="true">·</span> {artwork.date_display || 'Date unknown'}</span></span>
-            </Link>)}
-          </div>}
+          : <GalleryWall items={filtered} sourcePath={sourcePath} detailPath={detailPath} />}
   </div>
 }
