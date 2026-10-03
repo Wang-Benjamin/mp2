@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import ArtworkImage from '../components/ArtworkImage'
 import StatusPanel from '../components/StatusPanel'
-import { filterGallery, getArtwork, getFeaturedArtworks, plainText, searchArtworks, sortArtworks, type Artwork, type GalleryFilters, type Period, type SortKey, type SortOrder } from '../lib/artworks'
+import { arrangeGallery, filterGallery, getArtwork, getFeaturedArtworks, plainText, searchArtworks, sortArtworks, type Artwork, type GalleryFilters, type Period, type SortKey, type SortOrder } from '../lib/artworks'
 
 export default function ArtworkPage() {
   const { id } = useParams()
@@ -45,7 +45,7 @@ export default function ArtworkPage() {
           period: (contextParams.get('period') ?? '') as Period,
           department: contextParams.get('department') ?? '',
         }
-        return filterGallery(featured, filters)
+        return arrangeGallery(filterGallery(featured, filters))
       }
       const query = contextParams.get('q') ?? ''
       const pages = Math.min(10, Math.max(1, Number.parseInt(contextParams.get('pages') ?? '1', 10) || 1))

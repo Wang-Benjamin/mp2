@@ -76,7 +76,8 @@ export default function CollectionsPage() {
   }
 
   function detailPath(id: number) {
-    const context = new URLSearchParams({ from: 'collections', q: query, sort, order, pages: String(pages) })
+    const context = new URLSearchParams({ from: 'collections' })
+    for (const [key, value] of params) context.set(key, value)
     return `/artworks/${id}?${context}`
   }
 
@@ -84,15 +85,8 @@ export default function CollectionsPage() {
     <div className="page-intro">
       <div>
         <p className="eyebrow">THE ART INSTITUTE OF CHICAGO · DIGITAL COLLECTION</p>
-        <h1>Art Collections<span className="title-period">.</span></h1>
-        <p className="intro-copy">Find a work. Follow the artist. See where curiosity takes you.</p>
+        <h1>Art Collections</h1>
       </div>
-      <div className="intro-decoration" aria-hidden="true"><span>01</span><span>EXPLORE</span></div>
-    </div>
-
-    <div className="section-bar">
-      <div className="section-heading"><span className="section-marker" /> <h2>Browse artworks</h2></div>
-      <span className="section-count">{isReady ? `${items.length} ${isSearching ? 'of ' + total + ' ' : ''}works` : 'Discover the collection'}</span>
     </div>
 
     <div className="list-toolbar">
@@ -123,7 +117,6 @@ export default function CollectionsPage() {
           : <>
             <div className="artwork-list">
               {items.map((artwork, index) => <Link className="list-item" key={artwork.id} to={detailPath(artwork.id)} onClick={() => rememberScroll(sourcePath)}>
-                <span className="list-number">{String(index + 1).padStart(2, '0')}</span>
                 <ArtworkImage key={`${artwork.id}-${artwork.image_id}`} artwork={artwork} size={200} className="list-image" eager={index < 4} />
                 <span className="list-text">
                   <strong>{artwork.title || 'Untitled'}</strong>
@@ -133,7 +126,6 @@ export default function CollectionsPage() {
                     <span>{artwork.date_display || 'Date unknown'}</span>
                   </span>
                 </span>
-                <span className="item-arrow" aria-hidden="true">↗</span>
               </Link>)}
             </div>
             {hasMore && <div className="load-more"><button type="button" className="button button-outline" onClick={() => updateParam('pages', String(pages + 1))}>Load more artworks <span aria-hidden="true">↓</span></button></div>}

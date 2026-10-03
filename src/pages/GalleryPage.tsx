@@ -4,7 +4,7 @@ import ArtworkImage from '../components/ArtworkImage'
 import StatusPanel from '../components/StatusPanel'
 import { useFeatured } from '../hooks/useFeatured'
 import { rememberScroll, useScrollMemory } from '../hooks/useScrollMemory'
-import { filterGallery, type Artwork, type GalleryFilters, type Period } from '../lib/artworks'
+import { arrangeGallery, filterGallery, type Artwork, type GalleryFilters, type Period } from '../lib/artworks'
 
 const periods: { value: Period; label: string }[] = [
   { value: '', label: 'None' },
@@ -29,7 +29,7 @@ export default function GalleryPage() {
     department: params.get('department') ?? '',
   }
   const filtered = useMemo(
-    () => filterGallery(featured.items, { type: filters.type, artist: filters.artist, period: filters.period, department: filters.department }),
+    () => arrangeGallery(filterGallery(featured.items, { type: filters.type, artist: filters.artist, period: filters.period, department: filters.department })),
     [featured.items, filters.type, filters.artist, filters.period, filters.department],
   )
   const types = useMemo(() => uniqueOptions(featured.items, 'artwork_type_title'), [featured.items])
@@ -55,18 +55,11 @@ export default function GalleryPage() {
   }
 
   return <div className="page gallery-page">
-    <div className="page-intro gallery-intro">
+    <div className="page-intro">
       <div>
         <p className="eyebrow">THE ART INSTITUTE OF CHICAGO · VISUAL ARCHIVE</p>
-        <h1>Art Gallery<span className="title-period">.</span></h1>
-        <p className="intro-copy">A closer look at the works that move us.</p>
+        <h1>Art Gallery</h1>
       </div>
-      <div className="intro-decoration" aria-hidden="true"><span>02</span><span>DISCOVER</span></div>
-    </div>
-
-    <div className="section-bar">
-      <div className="section-heading"><span className="section-marker" /><h2>Explore by eye</h2></div>
-      <span className="section-count">{featured.status === 'ready' ? `${filtered.length} works` : 'A visual collection'}</span>
     </div>
 
     <div className="gallery-toolbar" aria-label="Gallery filters">
@@ -83,7 +76,7 @@ export default function GalleryPage() {
         ? <StatusPanel title="The gallery could not be loaded" message="Check your connection and try again." action="Try again" onAction={featured.retry} />
         : filtered.length === 0
           ? <StatusPanel title="No artworks match these filters" message="Try a different combination." action="Clear filters" onAction={() => setParams({}, { replace: true })} />
-          : <div className="masonry-gallery">
+          : <div className="gallery-grid">
             {filtered.map((artwork, index) => <Link className="gallery-card" key={artwork.id} to={detailPath(artwork.id)} onClick={() => rememberScroll(sourcePath)}>
               <span className="gallery-image-wrap"><ArtworkImage key={`${artwork.id}-${artwork.image_id}`} artwork={artwork} size={400} eager={index < 8} /></span>
               <span className="gallery-caption"><strong>{artwork.title || 'Untitled'}</strong><span>{artwork.artist_title || 'Artist unknown'} <span aria-hidden="true">·</span> {artwork.date_display || 'Date unknown'}</span></span>

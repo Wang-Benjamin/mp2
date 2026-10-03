@@ -198,6 +198,17 @@ export function filterGallery(items: Artwork[], filters: GalleryFilters): Artwor
   })
 }
 
+export function arrangeGallery(items: Artwork[]): Artwork[] {
+  const bedroomId = 28560
+  const basketId = 111436
+  const bedroomIndex = items.findIndex((artwork) => artwork.id === bedroomId)
+  const basket = items.find((artwork) => artwork.id === basketId)
+  if (bedroomIndex < 0 || !basket || items[bedroomIndex + 1]?.id === basket.id) return items
+  const withoutBasket = items.filter((artwork) => artwork.id !== basketId)
+  const insertAt = withoutBasket.findIndex((artwork) => artwork.id === bedroomId) + 1
+  return [...withoutBasket.slice(0, insertAt), basket, ...withoutBasket.slice(insertAt)]
+}
+
 export function plainText(value: string | null | undefined): string {
   if (!value) return ''
   const doc = new DOMParser().parseFromString(value, 'text/html')
